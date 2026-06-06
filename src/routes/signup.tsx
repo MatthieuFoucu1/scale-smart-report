@@ -1,0 +1,89 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ArrowRight, ArrowLeft } from "lucide-react";
+import { saveLead, getLead } from "@/lib/lead-store";
+
+export const Route = createFileRoute("/signup")({
+  head: () => ({
+    meta: [
+      { title: "Start your audit — ScaleAudit" },
+      { name: "description", content: "Tell us who you are so we can build your audit." },
+    ],
+  }),
+  component: SignupPage,
+});
+
+function SignupPage() {
+  const navigate = useNavigate();
+  const existing = getLead();
+  const [name, setName] = useState(existing?.name ?? "");
+  const [email, setEmail] = useState(existing?.email ?? "");
+
+  function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim() || !email.trim()) return;
+    saveLead({ name: name.trim(), email: email.trim(), createdAt: new Date().toISOString() });
+    navigate({ to: "/business" });
+  }
+
+  return (
+    <FormShell step={1} title="First — who's getting this audit?" subtitle="We'll send your report and 30-day plan straight to your inbox.">
+      <form onSubmit={onSubmit} className="space-y-5">
+        <div className="space-y-2">
+          <Label htmlFor="name">Your name</Label>
+          <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Jane Smith" autoFocus required className="h-12" />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="email">Work email</Label>
+          <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="jane@business.com" required className="h-12" />
+        </div>
+        <Button type="submit" size="lg" className="h-12 w-full text-base font-semibold">
+          Continue <ArrowRight className="ml-2 h-4 w-4" />
+        </Button>
+      </form>
+    </FormShell>
+  );
+}
+
+export function FormShell({
+  step,
+  title,
+  subtitle,
+  children,
+}: {
+  step: 1 | 2;
+  title: string;
+  subtitle: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
+        <Link to="/" className="flex items-center gap-2">
+          <div className="h-8 w-8 rounded-lg bg-primary" />
+          <span className="text-lg font-semibold tracking-tight">ScaleAudit</span>
+        </Link>
+        <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="mr-1 inline h-4 w-4" /> Back
+        </Link>
+      </header>
+      <main className="mx-auto max-w-md px-6 pb-16 pt-8">
+        <div className="mb-8 flex items-center gap-2">
+          {[1, 2].map((n) => (
+            <div
+              key={n}
+              className={`h-1 flex-1 rounded-full ${n <= step ? "bg-accent" : "bg-muted"}`}
+            />
+          ))}
+        </div>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Step {step} of 2</p>
+        <h1 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl">{title}</h1>
+        <p className="mt-3 text-balance text-muted-foreground">{subtitle}</p>
+        <div className="mt-8">{children}</div>
+      </main>
+    </div>
+  );
+}
