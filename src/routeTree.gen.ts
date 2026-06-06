@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WaitlistRouteImport } from './routes/waitlist'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as ReportRouteImport } from './routes/report'
 import { Route as BusinessRouteImport } from './routes/business'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -22,6 +23,11 @@ const WaitlistRoute = WaitlistRouteImport.update({
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportRoute = ReportRouteImport.update({
+  id: '/report',
+  path: '/report',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BusinessRoute = BusinessRouteImport.update({
@@ -38,12 +44,14 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/business': typeof BusinessRoute
+  '/report': typeof ReportRoute
   '/signup': typeof SignupRoute
   '/waitlist': typeof WaitlistRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/business': typeof BusinessRoute
+  '/report': typeof ReportRoute
   '/signup': typeof SignupRoute
   '/waitlist': typeof WaitlistRoute
 }
@@ -51,20 +59,22 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/business': typeof BusinessRoute
+  '/report': typeof ReportRoute
   '/signup': typeof SignupRoute
   '/waitlist': typeof WaitlistRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/business' | '/signup' | '/waitlist'
+  fullPaths: '/' | '/business' | '/report' | '/signup' | '/waitlist'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/business' | '/signup' | '/waitlist'
-  id: '__root__' | '/' | '/business' | '/signup' | '/waitlist'
+  to: '/' | '/business' | '/report' | '/signup' | '/waitlist'
+  id: '__root__' | '/' | '/business' | '/report' | '/signup' | '/waitlist'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BusinessRoute: typeof BusinessRoute
+  ReportRoute: typeof ReportRoute
   SignupRoute: typeof SignupRoute
   WaitlistRoute: typeof WaitlistRoute
 }
@@ -83,6 +93,13 @@ declare module '@tanstack/react-router' {
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/report': {
+      id: '/report'
+      path: '/report'
+      fullPath: '/report'
+      preLoaderRoute: typeof ReportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/business': {
@@ -105,6 +122,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BusinessRoute: BusinessRoute,
+  ReportRoute: ReportRoute,
   SignupRoute: SignupRoute,
   WaitlistRoute: WaitlistRoute,
 }
