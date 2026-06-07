@@ -21,9 +21,14 @@ function Index() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <Logo />
-        <Link to="/signup">
-          <Button variant="ghost" size="sm">Get my audit</Button>
-        </Link>
+        <nav className="flex items-center gap-2">
+          <Link to="/login">
+            <Button variant="ghost" size="sm">Log in</Button>
+          </Link>
+          <Link to="/signup">
+            <Button size="sm" className="font-semibold">Join the waitlist</Button>
+          </Link>
+        </nav>
       </header>
 
       <section className="mx-auto max-w-4xl px-6 pb-16 pt-16 text-center sm:pt-24">
@@ -40,10 +45,10 @@ function Index() {
         <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link to="/signup">
             <Button size="lg" className="h-14 px-8 text-base font-semibold">
-              Get my free audit <ArrowRight className="ml-2 h-5 w-5" />
+              Join the waitlist — free <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </Link>
-          <span className="text-sm text-muted-foreground">No credit card. 60 seconds.</span>
+          <span className="text-sm text-muted-foreground">No credit card. Takes 60 seconds.</span>
         </div>
 
         <div className="mt-12 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
@@ -87,7 +92,7 @@ function Index() {
         </p>
         <Link to="/signup">
           <Button size="lg" className="mt-8 h-14 px-8 text-base font-semibold">
-            Run my audit now <ArrowRight className="ml-2 h-5 w-5" />
+            Get on the waitlist <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </Link>
       </section>
