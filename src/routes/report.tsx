@@ -3,10 +3,11 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Lock, TrendingUp, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { getLead, type Lead } from "@/lib/lead-store";
+import { Logo } from "@/components/logo";
 
 export const Route = createFileRoute("/report")({
   head: () => ({
-    meta: [{ title: "Your audit — ScaleAudit" }],
+    meta: [{ title: "Your audit — scorvio.ai" }],
   }),
   component: ReportPage,
 });
@@ -42,10 +43,7 @@ function ReportPage() {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-primary" />
-            <span className="text-lg font-semibold tracking-tight">ScaleAudit</span>
-          </Link>
+          <Link to="/"><Logo /></Link>
           {!isPaid && (
             <Button size="sm" className="font-semibold">Unlock full report — $97</Button>
           )}
