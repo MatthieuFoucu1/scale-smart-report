@@ -22,11 +22,12 @@ function SignupPage() {
   const existing = getLead();
   const [name, setName] = useState(existing?.name ?? "");
   const [email, setEmail] = useState(existing?.email ?? "");
+  const [password, setPassword] = useState("");
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !email.trim()) return;
-    saveLead({ name: name.trim(), email: email.trim(), createdAt: new Date().toISOString() });
+    if (!name.trim() || !email.trim() || password.length < 6) return;
+    saveLead({ name: name.trim(), email: email.trim(), password, createdAt: new Date().toISOString() });
     navigate({ to: "/business" });
   }
 
@@ -41,9 +42,17 @@ function SignupPage() {
           <Label htmlFor="email">Work email</Label>
           <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="jane@business.com" required className="h-12" />
         </div>
+        <div className="space-y-2">
+          <Label htmlFor="password">Password</Label>
+          <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 6 characters" required minLength={6} className="h-12" />
+        </div>
         <Button type="submit" size="lg" className="h-12 w-full text-base font-semibold">
           Continue <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
+        <p className="text-center text-sm text-muted-foreground">
+          Already have an account?{" "}
+          <Link to="/login" className="font-semibold text-accent hover:underline">Log in</Link>
+        </p>
       </form>
     </FormShell>
   );
