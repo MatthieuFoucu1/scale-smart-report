@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WaitlistRouteImport } from './routes/waitlist'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ReportRouteImport } from './routes/report'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as BusinessRouteImport } from './routes/business'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -30,6 +31,11 @@ const ReportRoute = ReportRouteImport.update({
   path: '/report',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BusinessRoute = BusinessRouteImport.update({
   id: '/business',
   path: '/business',
@@ -44,6 +50,7 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/business': typeof BusinessRoute
+  '/login': typeof LoginRoute
   '/report': typeof ReportRoute
   '/signup': typeof SignupRoute
   '/waitlist': typeof WaitlistRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/business': typeof BusinessRoute
+  '/login': typeof LoginRoute
   '/report': typeof ReportRoute
   '/signup': typeof SignupRoute
   '/waitlist': typeof WaitlistRoute
@@ -59,21 +67,30 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/business': typeof BusinessRoute
+  '/login': typeof LoginRoute
   '/report': typeof ReportRoute
   '/signup': typeof SignupRoute
   '/waitlist': typeof WaitlistRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/business' | '/report' | '/signup' | '/waitlist'
+  fullPaths: '/' | '/business' | '/login' | '/report' | '/signup' | '/waitlist'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/business' | '/report' | '/signup' | '/waitlist'
-  id: '__root__' | '/' | '/business' | '/report' | '/signup' | '/waitlist'
+  to: '/' | '/business' | '/login' | '/report' | '/signup' | '/waitlist'
+  id:
+    | '__root__'
+    | '/'
+    | '/business'
+    | '/login'
+    | '/report'
+    | '/signup'
+    | '/waitlist'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BusinessRoute: typeof BusinessRoute
+  LoginRoute: typeof LoginRoute
   ReportRoute: typeof ReportRoute
   SignupRoute: typeof SignupRoute
   WaitlistRoute: typeof WaitlistRoute
@@ -102,6 +119,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/business': {
       id: '/business'
       path: '/business'
@@ -122,6 +146,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BusinessRoute: BusinessRoute,
+  LoginRoute: LoginRoute,
   ReportRoute: ReportRoute,
   SignupRoute: SignupRoute,
   WaitlistRoute: WaitlistRoute,
@@ -129,3 +154,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
