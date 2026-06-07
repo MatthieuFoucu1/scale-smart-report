@@ -19,8 +19,10 @@ The free tier returns a partial report; the paid tier returns the full one.
 """
 from __future__ import annotations
 
+import json
 import os
 import secrets
+from pathlib import Path
 from datetime import datetime
 from flask import Flask, jsonify, request
 
@@ -35,6 +37,29 @@ if CORS:
 
 # In-memory store. Replace with a real DB (Postgres, Supabase, etc).
 AUDITS: dict[str, dict] = {}
+
+# JSON file where waitlist signups are persisted so admins can review them.
+# Each entry: {name, email, password, business, city, state, plan, created_at, token}
+USERS_FILE = Path(os.environ.get("USERS_FILE", "users.json"))
+
+
+def _load_users() -> list[dict]:
+    if not USERS_FILE.exists():
+        return []
+    try:
+        return json.loads(USERS_FILE.read_text() or "[]")
+    except json.JSONDecodeError:
+        return []
+
+
+def _save_users(users: list[dict]) -> None:
+    USERS_FILE.write_text(json.dumps(users, indent=2))
+
+
+def append_user(entry: dict) -> None:
+    users = _load_users()
+    users.append(entry)
+    _save_users(users)
 
 
 # ---------------------------------------------------------------------------
@@ -122,6 +147,45 @@ def get_report(token: str):
 @app.get("/healthz")
 def healthz():
     return {"ok": True}
+
+
+# ---------------------------------------------------------------------------
+# Waitlist: stores a JSON file of every signup so admins can review leads.
+# ---------------------------------------------------------------------------
+@app.post("/api/waitlist")
+def join_waitlist():
+    data = request.get_json(silent=True) or {}
+    required = ("name", "email", "password", "business", "city", "state")
+    missing = [k for k in required if not data.get(k)]
+    if missing:
+        return jsonify({"error": f"missing: {', '.join(missing)}"}), 400
+
+    plan = data.get("plan", "free")
+    if plan not in ("free", "paid"):
+        plan = "free"
+
+    entry = {
+        "token": secrets.token_urlsafe(12),
+        "name": data["name"],
+        "email": data["email"],
+        # NOTE: stored in plaintext per current spec — swap for a hash
+        # (bcrypt/argon2) before production.
+        "password": data["password"],
+        "business": data["business"],
+        "location": f"{data['city']}, {data['state']}",
+        "city": data["city"],
+        "state": data["state"],
+        "plan": plan,
+        "created_at": datetime.utcnow().isoformat() + "Z",
+    }
+    append_user(entry)
+    return jsonify({"ok": True, "token": entry["token"]}), 201
+
+
+@app.get("/api/admin/users")
+def admin_list_users():
+    """Quick admin view of the waitlist. Protect with auth before shipping."""
+    return jsonify({"users": _load_users()})
 
 
 if __name__ == "__main__":

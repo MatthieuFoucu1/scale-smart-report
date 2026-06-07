@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,7 @@ function BusinessPage() {
   const [business, setBusiness] = useState("");
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const lead = getLead();
@@ -31,10 +32,29 @@ function BusinessPage() {
     setState(lead.state ?? "");
   }, [navigate]);
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!business.trim() || !city.trim() || !state.trim()) return;
-    saveLead({ business: business.trim(), city: city.trim(), state: state.trim() });
+    setSubmitting(true);
+    const lead = getLead();
+    saveLead({ business: business.trim(), city: city.trim(), state: state.trim(), plan: "free" });
+    try {
+      await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: lead?.name,
+          email: lead?.email,
+          password: lead?.password,
+          business: business.trim(),
+          city: city.trim(),
+          state: state.trim(),
+          plan: "free",
+        }),
+      });
+    } catch {
+      // best-effort; backend may not be running locally
+    }
     navigate({ to: "/waitlist" });
   }
 
@@ -55,11 +75,12 @@ function BusinessPage() {
             <Input id="state" value={state} onChange={(e) => setState(e.target.value.toUpperCase().slice(0, 2))} placeholder="TX" required maxLength={2} className="h-12 uppercase" />
           </div>
         </div>
-        <Button type="submit" size="lg" className="h-12 w-full text-base font-semibold">
-          Sign up <ArrowRight className="ml-2 h-4 w-4" />
+        <Button type="submit" size="lg" disabled={submitting} className="h-12 w-full text-base font-semibold">
+          {submitting ? "Joining waitlist…" : "Join the waitlist"} <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
         <p className="text-center text-xs text-muted-foreground">
-          By signing up you join the waitlist. We&apos;ll email you the moment your audit is ready.
+          By signing up you join the waitlist. We&apos;ll email you the moment your audit is ready. Already have an account?{" "}
+          <Link to="/login" className="font-semibold text-accent hover:underline">Log in</Link>
         </p>
       </form>
     </FormShell>
