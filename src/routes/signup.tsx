@@ -5,11 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowRight, ArrowLeft } from "lucide-react";
 import { saveLead, getLead } from "@/lib/lead-store";
+import { Logo } from "@/components/logo";
 
 export const Route = createFileRoute("/signup")({
   head: () => ({
     meta: [
-      { title: "Start your audit — ScaleAudit" },
+      { title: "Start your audit — scorvio.ai" },
       { name: "description", content: "Tell us who you are so we can build your audit." },
     ],
   }),
@@ -62,10 +63,7 @@ export function FormShell({
   return (
     <div className="min-h-screen bg-background">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-primary" />
-          <span className="text-lg font-semibold tracking-tight">ScaleAudit</span>
-        </Link>
+        <Link to="/"><Logo /></Link>
         <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="mr-1 inline h-4 w-4" /> Back
         </Link>

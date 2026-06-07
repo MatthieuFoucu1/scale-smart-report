@@ -1,14 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle2, BarChart3, Search, Zap } from "lucide-react";
+import { ArrowRight, CheckCircle2, BarChart3, Search, Zap, Database } from "lucide-react";
+import { Logo } from "@/components/logo";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "ScaleAudit — The 60-second internet audit that shows you exactly how to grow" },
+      { title: "scorvio.ai — The 60-second internet audit that shows you exactly how to grow" },
       { name: "description", content: "Get a brutally honest audit of your business's online presence — and a step-by-step plan to scale. Built for operators who want results, not fluff." },
-      { property: "og:title", content: "ScaleAudit — Find the leaks. Fix them. Scale." },
+      { property: "og:title", content: "scorvio.ai — Find the leaks. Fix them. Scale." },
       { property: "og:description", content: "Your free internet audit + scale plan. See what's costing you customers in 60 seconds." },
     ],
   }),
@@ -19,10 +20,7 @@ function Index() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-primary" />
-          <span className="text-lg font-semibold tracking-tight">ScaleAudit</span>
-        </div>
+        <Logo />
         <Link to="/signup">
           <Button variant="ghost" size="sm">Get my audit</Button>
         </Link>
@@ -54,6 +52,11 @@ function Index() {
               <CheckCircle2 className="h-4 w-4 text-accent" /> {t}
             </div>
           ))}
+        </div>
+
+        <div className="mt-10 inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm text-muted-foreground">
+          <Database className="h-4 w-4 text-accent" />
+          Powered by <span className="font-semibold text-foreground">200M+ businesses</span> of benchmark data
         </div>
       </section>
 
@@ -90,8 +93,9 @@ function Index() {
       </section>
 
       <footer className="border-t border-border">
-        <div className="mx-auto max-w-6xl px-6 py-8 text-sm text-muted-foreground">
-          © {new Date().getFullYear()} ScaleAudit. All rights reserved.
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-6 py-8 text-sm text-muted-foreground sm:flex-row">
+          <span>© {new Date().getFullYear()} scorvio.ai — All rights reserved.</span>
+          <span className="text-xs">Powered by 200M+ businesses of benchmark data</span>
         </div>
       </footer>
     </div>

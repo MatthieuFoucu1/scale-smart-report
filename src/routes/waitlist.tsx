@@ -3,10 +3,11 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Check, Sparkles, Lock, ArrowRight } from "lucide-react";
 import { getLead, saveLead, type Lead } from "@/lib/lead-store";
+import { Logo } from "@/components/logo";
 
 export const Route = createFileRoute("/waitlist")({
   head: () => ({
-    meta: [{ title: "You're on the list — ScaleAudit" }],
+    meta: [{ title: "You're on the list — scorvio.ai" }],
   }),
   component: WaitlistPage,
 });
@@ -35,10 +36,7 @@ function WaitlistPage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-primary" />
-          <span className="text-lg font-semibold tracking-tight">ScaleAudit</span>
-        </Link>
+        <Link to="/"><Logo /></Link>
       </header>
 
       <main className="mx-auto max-w-2xl px-6 pb-20 pt-8 text-center">

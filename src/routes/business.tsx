@@ -9,7 +9,7 @@ import { FormShell } from "./signup";
 
 export const Route = createFileRoute("/business")({
   head: () => ({
-    meta: [{ title: "Your business — ScaleAudit" }],
+    meta: [{ title: "Your business — scorvio.ai" }],
   }),
   component: BusinessPage,
 });
