@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ArrowLeft } from "lucide-react";
 import { saveLead, getLead } from "@/lib/lead-store";
 import { FormShell } from "./signup";
 
@@ -125,6 +125,13 @@ function BusinessPage() {
         <Button type="submit" size="lg" disabled={submitting} className="h-12 w-full text-base font-semibold">
           {submitting ? "Joining waitlist…" : "Join the waitlist"} <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
+        <button
+          type="button"
+          onClick={() => navigate({ to: "/signup" })}
+          className="flex items-center justify-center gap-1 w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="h-3 w-3" /> Back
+        </button>
         <p className="text-center text-xs text-muted-foreground">
           By signing up you join the waitlist. We&apos;ll email you the moment your audit is ready. Already have an account?{" "}
           <Link to="/login" className="font-semibold text-accent hover:underline">Log in</Link>
