@@ -20,6 +20,7 @@ function BusinessPage() {
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const lead = getLead();
@@ -36,10 +37,12 @@ function BusinessPage() {
     e.preventDefault();
     if (!business.trim() || !city.trim() || !state.trim()) return;
     setSubmitting(true);
+    setError(null);
     const lead = getLead();
     saveLead({ business: business.trim(), city: city.trim(), state: state.trim(), plan: "free" });
+
     try {
-      await fetch(`${import.meta.env.VITE_API_URL}/api/waitlist`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/waitlist`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -53,9 +56,26 @@ function BusinessPage() {
           referred_by_code: lead?.affiliateCode ?? null,
         }),
       });
+
+      if (res.status === 409) {
+        const body = await res.json();
+        setError(body.error);
+        setSubmitting(false);
+        return;
+      }
+
+      if (!res.ok) {
+        setError("Something went wrong. Please try again.");
+        setSubmitting(false);
+        return;
+      }
     } catch (err) {
       console.error("Waitlist signup failed:", err);
+      setError("Something went wrong. Please try again.");
+      setSubmitting(false);
+      return;
     }
+
     navigate({ to: "/waitlist" });
   }
 
@@ -64,18 +84,44 @@ function BusinessPage() {
       <form onSubmit={onSubmit} className="space-y-5">
         <div className="space-y-2">
           <Label htmlFor="business">Business name</Label>
-          <Input id="business" value={business} onChange={(e) => setBusiness(e.target.value)} placeholder="Acme Plumbing Co." autoFocus required className="h-12" />
+          <Input
+            id="business"
+            value={business}
+            onChange={(e) => setBusiness(e.target.value)}
+            placeholder="Acme Plumbing Co."
+            autoFocus
+            required
+            className="h-12"
+          />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label htmlFor="city">City</Label>
-            <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Austin" required className="h-12" />
+            <Input
+              id="city"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="Austin"
+              required
+              className="h-12"
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="state">State</Label>
-            <Input id="state" value={state} onChange={(e) => setState(e.target.value.toUpperCase().slice(0, 2))} placeholder="TX" required maxLength={2} className="h-12 uppercase" />
+            <Input
+              id="state"
+              value={state}
+              onChange={(e) => setState(e.target.value.toUpperCase().slice(0, 2))}
+              placeholder="TX"
+              required
+              maxLength={2}
+              className="h-12 uppercase"
+            />
           </div>
         </div>
+        {error && (
+          <p className="text-sm text-red-500 text-center">{error}</p>
+        )}
         <Button type="submit" size="lg" disabled={submitting} className="h-12 w-full text-base font-semibold">
           {submitting ? "Joining waitlist…" : "Join the waitlist"} <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
