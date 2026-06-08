@@ -31,7 +31,7 @@ except ImportError:
     CORS = None
 
 from dotenv import load_dotenv
-load_dotenv()  # loads .env when running locally
+load_dotenv()
 
 from supabase import create_client, Client
 
@@ -130,7 +130,7 @@ def healthz():
 
 
 # ---------------------------------------------------------------------------
-# Waitlist
+# Waitlist / signup
 # ---------------------------------------------------------------------------
 
 @app.post("/api/waitlist")
@@ -152,14 +152,13 @@ def join_waitlist():
     referred_by_code = data.get("referred_by_code") or None
     referred_by_id = None
     if referred_by_code:
-        result = supabase.table("waitlist") \
+        ref_result = supabase.table("clients") \
             .select("id") \
             .eq("affiliate_code", referred_by_code) \
             .single() \
             .execute()
-        if result.data:
-            referred_by_id = result.data["id"]
-            # Log a conversion event for the affiliate
+        if ref_result.data:
+            referred_by_id = ref_result.data["id"]
             supabase.table("affiliate_events").insert({
                 "affiliate_code": referred_by_code,
                 "event_type": "conversion",
@@ -178,11 +177,11 @@ def join_waitlist():
         "referred_by_id": referred_by_id,
     }
 
-    result = supabase.table("waitlist").insert(entry).execute()
+    result = supabase.table("clients").insert(entry).execute()
     if not result.data:
         return jsonify({"error": "Failed to save signup"}), 500
 
-    # Update conversion with the new user's id now that we have it
+    # Update conversion event with the new user's id
     if referred_by_code and result.data:
         new_user_id = result.data[0]["id"]
         supabase.table("affiliate_events") \
@@ -200,13 +199,11 @@ def join_waitlist():
 
 @app.post("/api/affiliate/click")
 def track_click():
-    """Call this when someone visits the site via an affiliate link."""
     code = request.args.get("code") or (request.get_json(silent=True) or {}).get("code")
     if not code:
         return jsonify({"error": "missing code"}), 400
 
-    # Verify the code exists
-    result = supabase.table("waitlist") \
+    result = supabase.table("clients") \
         .select("id") \
         .eq("affiliate_code", code) \
         .eq("is_affiliate", True) \
@@ -226,7 +223,6 @@ def track_click():
 
 @app.get("/api/affiliate/stats/<code>")
 def affiliate_stats(code: str):
-    """Returns click + conversion counts for a given affiliate code."""
     result = supabase.table("affiliate_stats") \
         .select("*") \
         .eq("affiliate_code", code) \
@@ -245,13 +241,12 @@ def affiliate_stats(code: str):
 
 @app.get("/api/admin/users")
 def admin_list_users():
-    result = supabase.table("waitlist").select("*").execute()
+    result = supabase.table("clients").select("*").execute()
     return jsonify({"users": result.data})
 
 
 @app.get("/api/admin/affiliates")
 def admin_list_affiliates():
-    """Returns the affiliate leaderboard from the view we created in Supabase."""
     result = supabase.table("affiliate_stats").select("*").execute()
     return jsonify({"affiliates": result.data})
 
