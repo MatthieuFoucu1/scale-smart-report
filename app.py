@@ -19,56 +19,34 @@ The free tier returns a partial report; the paid tier returns the full one.
 """
 from __future__ import annotations
 
-import json
 import os
 import secrets
-from pathlib import Path
-from datetime import datetime
+import bcrypt
+from datetime import datetime, timezone
 from flask import Flask, jsonify, request
 
 try:
     from flask_cors import CORS
-except ImportError:  # CORS is optional in dev
+except ImportError:
     CORS = None
+
+from supabase import create_client, Client
 
 app = Flask(__name__)
 if CORS:
     CORS(app)
 
-# In-memory store. Replace with a real DB (Postgres, Supabase, etc).
+# Supabase client — set these as environment variables, never hardcode
+SUPABASE_URL = os.environ["SUPABASE_URL"]
+SUPABASE_KEY = os.environ["SUPABASE_KEY"]
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# In-memory audit store (fine for v1)
 AUDITS: dict[str, dict] = {}
 
-# JSON file where waitlist signups are persisted so admins can review them.
-# Each entry: {name, email, password, business, city, state, plan, created_at, token}
-USERS_FILE = Path(os.environ.get("USERS_FILE", "users.json"))
 
-
-def _load_users() -> list[dict]:
-    if not USERS_FILE.exists():
-        return []
-    try:
-        return json.loads(USERS_FILE.read_text() or "[]")
-    except json.JSONDecodeError:
-        return []
-
-
-def _save_users(users: list[dict]) -> None:
-    USERS_FILE.write_text(json.dumps(users, indent=2))
-
-
-def append_user(entry: dict) -> None:
-    users = _load_users()
-    users.append(entry)
-    _save_users(users)
-
-
-# ---------------------------------------------------------------------------
-# TODO: implement the real audit logic here.
-# Inputs: business name, website (optional), city, state, plan tier.
-# Outputs: overall score, section scores, prioritized fixes, competitor diff.
-# ---------------------------------------------------------------------------
 def run_audit(business: str, city: str, state: str, website: str | None) -> dict:
-    """Stub. Replace with real crawlers / scoring / LLM logic."""
+    """Stub. Replace with real logic later."""
     return {
         "business": business,
         "city": city,
@@ -83,15 +61,12 @@ def run_audit(business: str, city: str, state: str, website: str | None) -> dict
             {"key": "conversion", "title": "Conversion & Funnel",    "score": 29, "summary": "..."},
             {"key": "competitor", "title": "Competitor Gap",         "score": 51, "summary": "..."},
         ],
-        "plan_30_day": [
-            # populated by paid tier
-        ],
-        "generated_at": datetime.utcnow().isoformat() + "Z",
+        "plan_30_day": [],
+        "generated_at": datetime.now(timezone.utc).isoformat(),
     }
 
 
 def redact_for_free_tier(report: dict) -> dict:
-    """Return a partial report: keep overall + first 2 sections, blur the rest."""
     sections = report["sections"]
     return {
         **report,
@@ -149,9 +124,6 @@ def healthz():
     return {"ok": True}
 
 
-# ---------------------------------------------------------------------------
-# Waitlist: stores a JSON file of every signup so admins can review leads.
-# ---------------------------------------------------------------------------
 @app.post("/api/waitlist")
 def join_waitlist():
     data = request.get_json(silent=True) or {}
@@ -164,28 +136,35 @@ def join_waitlist():
     if plan not in ("free", "paid"):
         plan = "free"
 
+    # Hash the password — never store plaintext
+    hashed_pw = bcrypt.hashpw(data["password"].encode(), bcrypt.gensalt()).decode()
+
+    token = secrets.token_urlsafe(12)
+
     entry = {
-        "token": secrets.token_urlsafe(12),
+        "token": token,
         "name": data["name"],
         "email": data["email"],
-        # NOTE: stored in plaintext per current spec — swap for a hash
-        # (bcrypt/argon2) before production.
-        "password": data["password"],
+        "password_hash": hashed_pw,
         "business": data["business"],
-        "location": f"{data['city']}, {data['state']}",
         "city": data["city"],
         "state": data["state"],
         "plan": plan,
-        "created_at": datetime.utcnow().isoformat() + "Z",
     }
-    append_user(entry)
-    return jsonify({"ok": True, "token": entry["token"]}), 201
+
+    # Insert into Supabase
+    result = supabase.table("waitlist").insert(entry).execute()
+
+    if not result.data:
+        return jsonify({"error": "Failed to save signup"}), 500
+
+    return jsonify({"ok": True, "token": token}), 201
 
 
 @app.get("/api/admin/users")
 def admin_list_users():
-    """Quick admin view of the waitlist. Protect with auth before shipping."""
-    return jsonify({"users": _load_users()})
+    result = supabase.table("waitlist").select("*").execute()
+    return jsonify({"users": result.data})
 
 
 if __name__ == "__main__":
