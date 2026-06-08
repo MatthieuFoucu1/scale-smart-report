@@ -145,10 +145,18 @@ def join_waitlist():
     if plan not in ("free", "paid"):
         plan = "free"
 
+    # Check for duplicate email
+    existing = supabase.table("clients") \
+        .select("id") \
+        .eq("email", data["email"]) \
+        .execute()
+
+    if existing.data:
+        return jsonify({"error": "An account with this email already exists"}), 409
+
     hashed_pw = bcrypt.hashpw(data["password"].encode(), bcrypt.gensalt()).decode()
     token = secrets.token_urlsafe(12)
 
-    # Resolve referred_by_code -> referred_by_id
     referred_by_code = data.get("referred_by_code") or None
     referred_by_id = None
     if referred_by_code:
@@ -181,7 +189,6 @@ def join_waitlist():
     if not result.data:
         return jsonify({"error": "Failed to save signup"}), 500
 
-    # Update conversion event with the new user's id
     if referred_by_code and result.data:
         new_user_id = result.data[0]["id"]
         supabase.table("affiliate_events") \
