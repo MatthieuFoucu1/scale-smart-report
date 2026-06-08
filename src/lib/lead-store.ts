@@ -6,6 +6,7 @@ export type Lead = {
   city?: string;
   state?: string;
   plan?: "free" | "paid";
+  affiliateCode?: string;
   createdAt: string;
 };
 

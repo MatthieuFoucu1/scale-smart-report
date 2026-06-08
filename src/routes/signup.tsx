@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,20 +14,25 @@ export const Route = createFileRoute("/signup")({
       { name: "description", content: "Tell us who you are so we can build your audit." },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    ref: (search.ref as string) || "",
+  }),
   component: SignupPage,
 });
 
 function SignupPage() {
   const navigate = useNavigate();
+  const { ref } = useSearch({ from: "/signup" });
   const existing = getLead();
   const [name, setName] = useState(existing?.name ?? "");
   const [email, setEmail] = useState(existing?.email ?? "");
   const [password, setPassword] = useState("");
+  const [affiliateCode, setAffiliateCode] = useState(existing?.affiliateCode ?? ref ?? "");
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || !email.trim() || password.length < 6) return;
-    saveLead({ name: name.trim(), email: email.trim(), password, createdAt: new Date().toISOString() });
+    saveLead({ name: name.trim(), email: email.trim(), password, affiliateCode: affiliateCode.trim() || undefined, createdAt: new Date().toISOString() });
     navigate({ to: "/business" });
   }
 
@@ -45,6 +50,10 @@ function SignupPage() {
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
           <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 6 characters" required minLength={6} className="h-12" />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="affiliateCode">Affiliate code (optional)</Label>
+          <Input id="affiliateCode" value={affiliateCode} onChange={(e) => setAffiliateCode(e.target.value)} placeholder="Enter your affiliate code" className="h-12" />
         </div>
         <Button type="submit" size="lg" className="h-12 w-full text-base font-semibold">
           Continue <ArrowRight className="ml-2 h-4 w-4" />

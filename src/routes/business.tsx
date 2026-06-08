@@ -50,6 +50,7 @@ function BusinessPage() {
           city: city.trim(),
           state: state.trim(),
           plan: "free",
+          affiliateCode: lead?.affiliateCode,
         }),
       });
     } catch {

@@ -30,18 +30,19 @@ try:
 except ImportError:
     CORS = None
 
+from dotenv import load_dotenv
+load_dotenv()  # loads .env when running locally
+
 from supabase import create_client, Client
 
 app = Flask(__name__)
 if CORS:
     CORS(app)
 
-# Supabase client — set these as environment variables, never hardcode
 SUPABASE_URL = os.environ["SUPABASE_URL"]
 SUPABASE_KEY = os.environ["SUPABASE_KEY"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# In-memory audit store (fine for v1)
 AUDITS: dict[str, dict] = {}
 
 
@@ -76,6 +77,10 @@ def redact_for_free_tier(report: dict) -> dict:
         "plan_30_day": [],
     }
 
+
+# ---------------------------------------------------------------------------
+# Audit endpoints
+# ---------------------------------------------------------------------------
 
 @app.post("/api/audit")
 def create_audit():
@@ -124,6 +129,10 @@ def healthz():
     return {"ok": True}
 
 
+# ---------------------------------------------------------------------------
+# Waitlist
+# ---------------------------------------------------------------------------
+
 @app.post("/api/waitlist")
 def join_waitlist():
     data = request.get_json(silent=True) or {}
@@ -136,10 +145,25 @@ def join_waitlist():
     if plan not in ("free", "paid"):
         plan = "free"
 
-    # Hash the password — never store plaintext
     hashed_pw = bcrypt.hashpw(data["password"].encode(), bcrypt.gensalt()).decode()
-
     token = secrets.token_urlsafe(12)
+
+    # Resolve referred_by_code -> referred_by_id
+    referred_by_code = data.get("referred_by_code") or None
+    referred_by_id = None
+    if referred_by_code:
+        result = supabase.table("waitlist") \
+            .select("id") \
+            .eq("affiliate_code", referred_by_code) \
+            .single() \
+            .execute()
+        if result.data:
+            referred_by_id = result.data["id"]
+            # Log a conversion event for the affiliate
+            supabase.table("affiliate_events").insert({
+                "affiliate_code": referred_by_code,
+                "event_type": "conversion",
+            }).execute()
 
     entry = {
         "token": token,
@@ -150,21 +174,86 @@ def join_waitlist():
         "city": data["city"],
         "state": data["state"],
         "plan": plan,
+        "referred_by_code": referred_by_code,
+        "referred_by_id": referred_by_id,
     }
 
-    # Insert into Supabase
     result = supabase.table("waitlist").insert(entry).execute()
-
     if not result.data:
         return jsonify({"error": "Failed to save signup"}), 500
 
+    # Update conversion with the new user's id now that we have it
+    if referred_by_code and result.data:
+        new_user_id = result.data[0]["id"]
+        supabase.table("affiliate_events") \
+            .update({"converted_user_id": new_user_id}) \
+            .eq("affiliate_code", referred_by_code) \
+            .is_("converted_user_id", "null") \
+            .execute()
+
     return jsonify({"ok": True, "token": token}), 201
 
+
+# ---------------------------------------------------------------------------
+# Affiliate endpoints
+# ---------------------------------------------------------------------------
+
+@app.post("/api/affiliate/click")
+def track_click():
+    """Call this when someone visits the site via an affiliate link."""
+    code = request.args.get("code") or (request.get_json(silent=True) or {}).get("code")
+    if not code:
+        return jsonify({"error": "missing code"}), 400
+
+    # Verify the code exists
+    result = supabase.table("waitlist") \
+        .select("id") \
+        .eq("affiliate_code", code) \
+        .eq("is_affiliate", True) \
+        .single() \
+        .execute()
+
+    if not result.data:
+        return jsonify({"error": "invalid code"}), 404
+
+    supabase.table("affiliate_events").insert({
+        "affiliate_code": code,
+        "event_type": "click",
+    }).execute()
+
+    return jsonify({"ok": True}), 200
+
+
+@app.get("/api/affiliate/stats/<code>")
+def affiliate_stats(code: str):
+    """Returns click + conversion counts for a given affiliate code."""
+    result = supabase.table("affiliate_stats") \
+        .select("*") \
+        .eq("affiliate_code", code) \
+        .single() \
+        .execute()
+
+    if not result.data:
+        return jsonify({"error": "not found"}), 404
+
+    return jsonify(result.data)
+
+
+# ---------------------------------------------------------------------------
+# Admin
+# ---------------------------------------------------------------------------
 
 @app.get("/api/admin/users")
 def admin_list_users():
     result = supabase.table("waitlist").select("*").execute()
     return jsonify({"users": result.data})
+
+
+@app.get("/api/admin/affiliates")
+def admin_list_affiliates():
+    """Returns the affiliate leaderboard from the view we created in Supabase."""
+    result = supabase.table("affiliate_stats").select("*").execute()
+    return jsonify({"affiliates": result.data})
 
 
 if __name__ == "__main__":
