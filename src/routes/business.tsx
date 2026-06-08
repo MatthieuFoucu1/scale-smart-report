@@ -39,7 +39,7 @@ function BusinessPage() {
     const lead = getLead();
     saveLead({ business: business.trim(), city: city.trim(), state: state.trim(), plan: "free" });
     try {
-      await fetch("/api/waitlist", {
+      await fetch(`${import.meta.env.VITE_API_URL}/api/waitlist`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -50,11 +50,11 @@ function BusinessPage() {
           city: city.trim(),
           state: state.trim(),
           plan: "free",
-          affiliateCode: lead?.affiliateCode,
+          referred_by_code: lead?.affiliateCode ?? null,
         }),
       });
-    } catch {
-      // best-effort; backend may not be running locally
+    } catch (err) {
+      console.error("Waitlist signup failed:", err);
     }
     navigate({ to: "/waitlist" });
   }
