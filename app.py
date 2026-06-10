@@ -37,7 +37,11 @@ from supabase import create_client, Client
 
 app = Flask(__name__)
 if CORS:
-    CORS(app)
+    CORS(app, origins=[
+        "https://scorvio.ai",
+        "https://www.scorvio.ai",
+        "http://localhost:5173",
+    ])
 
 SUPABASE_URL = os.environ["SUPABASE_URL"]
 SUPABASE_KEY = os.environ["SUPABASE_KEY"]
